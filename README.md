@@ -11,11 +11,10 @@
 | HttpDns Android客户端接入文档（腾讯云客户专用）.doc | HttpDns Android客户端接入文档（腾讯云客户专用） | 腾讯云客户 |
 | README.md | HTTPDNS Android客户端接入文档 | 腾讯外部客户 |
 | VERSION.md | HTTPDNS Android SDK历史版本修改记录 | SDK开发维护人员 |
-| 安卓配置文件修改示例.docx | 安卓配置文件修改示例 | SDK开发维护人员 |
 | 数据报表申请方法.docx | 数据报表申请方法 | SDK开发维护人员 |
 
 ## 1. 功能介绍
-### HttpDns的主要功能是为了有效的避免由于运营商传统LocalDns解析导致的无法访问最佳接入点的方案。原理为使用Http加密协议替代传统的DNS协议，整个过程不使用域名，大大减少劫持的可能性。
+### HttpDns是为了有效的避免由于运营商传统LocalDns解析导致的无法访问最佳接入点而提出的解决方案。原理为使用Http加密协议替代传统的DNS协议，整个过程不使用域名，大大减少劫持的可能性。
 
 ## 2. 接入
 ### 2.1. AndroidMainfest配置：
@@ -38,17 +37,7 @@
 > ###
 
 ### 2.2 接入HttpDns库：
-> ### 将HttpDnsLibs\httpdns_xxxx.jar库文件拷贝至应用libs相应的位置，将HttpDnsLibs\dnsconfig.ini配置文件拷贝到应用Android\assets目录下；
-> ### 注意：
-> ### 拷贝dnsconfig.ini文件前，先修改此文件里的相关配置，但不要改变文件原有的编码格式，具体修改方法如下：
-
-| 修改项          | 修改字段          |  修改方法   |
-|  ------------- |  :-------------:  |  --------:  |
-| 厂商开关        | IS_COOPERATOR     | 填"true" |
-| 厂商上报appID   | COOPERATOR_APPID  | 云官网注册获得 |
-| SDK日志开关     | IS_DEBUG          | true为打开日志开关，false为关闭日志，建议测试阶段打开，正式上线时关闭 |
-| 服务端分配的ID  | DNS_ID            | 云官网注册获得 |
-| 服务端分配的KEY | DNS_KEY           | 云官网注册获得 |
+> ### 将HttpDnsLibs\httpdns_xxxx.jar库文件拷贝至应用libs相应的位置；
 
 ### 2.3 接入依赖库：（注意：已经接入了腾讯灯塔(beacon)组件的应用忽略此步）
 > ### 将HttpDnsLibs\beacon_android_vxxxx.jar灯塔库拷贝至游戏libs相应的位置；
@@ -57,7 +46,7 @@
 
     // 初始化灯塔：如果已经接入MSDK或者IMSDK或者单独接入了腾讯灯塔(Beacon)则不需再初始化该接口
     try {
-        // ***注意：这里业务需要输入自己的灯塔AppID
+        // ***注意：这里业务需要输入自己的灯塔appkey
         UserAction.setAppKey("0I000LT6GW1YGCP7");
         UserAction.initUserAction(MainActivity.this);
     } catch (Exception e) {
@@ -65,26 +54,34 @@
     }
 
 	/**
-    * 初始化HttpDns：如果接入了MSDK，建议初始化MSDK后再初始化HttpDns
-	* @param Activity  传入Application Activity
-	*/
-	MSDKDnsResolver.getInstance().init(MainActivity.this); 
+     * 初始化HttpDns：如果接入了MSDK，建议初始化MSDK后再初始化HttpDns
+	 * 
+	 * @param context 应用上下文，最好传入ApplicationContext
+	 * @param appkey 业务appkey，腾讯云官网（https://console.cloud.tencent.com/httpdns）申请获得，用于上报
+	 * @param dnsid dns解析id，腾讯云官网（https://console.cloud.tencent.com/httpdns）申请获得，用于域名解析鉴权
+	 * @param dnskey dns解析key，腾讯云官网（https://console.cloud.tencent.com/httpdns）申请获得，用于域名解析鉴权
+	 * @param debug 是否开启debug日志，true为打开，false为关闭，建议测试阶段打开，正式上线时关闭
+	 * @param timeout dns请求超时时间，单位ms，建议设置1000
+	 */
+	MSDKDnsResolver.getInstance().init(MainActivity.this, appkey, dnsid, dnskey, debug, timeout); 
 	
 	/**
-    * 设置OpenId，已接入MSDK业务直接传MSDK OpenId，其它业务传“NULL”
-	* 注意：该接口返回值是布尔型，在Unity或者Cocos下调用请注意处理返回类型
-	* @param String openId
-	*/
+     * 设置OpenId，已接入MSDK业务直接传MSDK OpenId，其它业务传“NULL”
+	 * 注意：该接口返回值是布尔型，在Unity或者Cocos下调用请注意处理返回类型
+	 * 
+	 * @param String openId
+	 */
 	MSDKDnsResolver.getInstance().WGSetDnsOpenId("10000");
 
 	/**
-	* HttpDns同步解析接口
-	* 注意：domain只能传入域名不能传入IP，返回结果需要做非空判断
-	* 首先查询缓存，若存在则返回结果，若不存在则进行同步域名解析请求，
-	* 解析完成返回最新解析结果，若解析失败返回空对象
-	* @param domain 域名(如www.qq.com)
-	* @return 域名对应的解析IP结果集合
-	*/
+	 * HttpDns同步解析接口
+	 * 注意：domain只能传入域名不能传入IP，返回结果需要做非空判断
+	 * 首先查询缓存，若存在则返回结果，若不存在则进行同步域名解析请求，
+	 * 解析完成返回最新解析结果，若解析失败返回空对象
+	 * 
+	 * @param domain 域名(如www.qq.com)
+	 * @return 域名对应的解析IP结果集合
+	 */
 	String ips = MSDKDnsResolver.getInstance(). getAddrByName(domain);
 
 ## 3．注意事项
@@ -135,7 +132,7 @@
 			Debug.Log(" WGGetHostByName ===========" + m_dnsJo);
 		if (m_dnsJo == null)
 			return;
-		m_dnsJo.Call("init", context);
+		m_dnsJo.Call("init", context, appId, dnsId, dnsKey, debug, timeout);
 	}
 
 ### (2)调用HttpDns接口解析域名：

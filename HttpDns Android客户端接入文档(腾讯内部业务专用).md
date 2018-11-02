@@ -25,17 +25,7 @@
 > ### 
 
 ### 2.2 接入HttpDns库：
-> ### 将HttpDnsLibs\httpdns_xxxx.jar库文件拷贝至应用libs相应的位置，将HttpDnsLibs\dnsconfig.ini配置文件拷贝到应用Android\assets目录下；
-> ### 注意：
-> ### 拷贝dnsconfig.ini文件前，先修改此文件里的相关配置，但不要改变文件原有的编码格式，具体修改方法如下：
-
-| 修改项          | 修改字段          |  修改方法   |
-|  ------------- |  :-------------:  |  --------:  |
-| 厂商开关        | IS_COOPERATOR     | 填"false" |
-| 厂商上报appID   | COOPERATOR_APPID  | 已接入MSDK业务为手Q AppId，否则从云官网注册获得 |
-| SDK日志开关     | IS_DEBUG          | true为打开日志开关，false为关闭日志，建议测试阶段打开，正式上线时关闭 |
-| 服务端分配的ID  | DNS_ID            | 腾讯内部业务不用关注 |
-| 服务端分配的KEY | DNS_KEY           | 腾讯内部业务不用关注 |
+> ### 将HttpDnsLibs\httpdns_xxxx.jar库文件拷贝至应用libs相应的位置；
 
 ### 2.3 接入依赖库：（注意：已经接入了msdk的应用忽略此步）
 > ### 将HttpDnsLibs\beacon_android_vxxxx.jar灯塔库拷贝至游戏libs相应的位置；
@@ -44,7 +34,7 @@
 
     // 初始化灯塔：如果已经接入MSDK或者IMSDK或者单独接入了腾讯灯塔(Beacon)则不需再初始化该接口
     try {
-        // ***注意：这里业务需要输入自己的灯塔AppID
+        // ***注意：这里业务需要输入自己的灯塔appkey
         UserAction.setAppKey("0I000LT6GW1YGCP7");
         UserAction.initUserAction(MainActivity.this);
     } catch (Exception e) {
@@ -52,26 +42,30 @@
     }
 
 	/**
-    * 初始化HttpDns：如果接入了MSDK，建议初始化MSDK后再初始化HttpDns
-	* @param Activity  传入Application Activity
-	*/
-	MSDKDnsResolver.getInstance().init(MainActivity.this); 
+     * 初始化HttpDns：如果接入了MSDK，建议初始化MSDK后再初始化HttpDns
+	 * 
+	 * @param context 应用上下文，最好传入ApplicationContext
+	 * @param appkey 业务appkey，腾讯内部业务（含代理）为手Q的id
+	 * @param debug 是否开启debug日志，true为打开，false为关闭，建议测试阶段打开，正式上线时关闭
+	 * @param timeout dns请求超时时间，单位ms，建议设置1000
+	 */
+	MSDKDnsResolver.getInstance().init(MainActivity.this, appkey, debug, timeout); 
 	
 	/**
-    * 设置OpenId，已接入MSDK业务直接传MSDK OpenId，其它业务传“NULL”
-	* 注意：该接口返回值是布尔型，在Unity或者Cocos下调用请注意处理返回类型
-	* @param String openId
-	*/
+     * 设置OpenId，已接入MSDK业务直接传MSDK OpenId，其它业务传“NULL”
+	 * 注意：该接口返回值是布尔型，在Unity或者Cocos下调用请注意处理返回类型
+	 * @param String openId
+	 */
 	MSDKDnsResolver.getInstance().WGSetDnsOpenId("10000");
 
 	/**
-	* HttpDns同步解析接口
-	* 注意：domain只能传入域名不能传入IP，返回结果需要做非空判断
-	* 首先查询缓存，若存在则返回结果，若不存在则进行同步域名解析请求，
-	* 解析完成返回最新解析结果，若解析失败返回空对象
-	* @param domain 域名(如www.qq.com)
-	* @return 域名对应的解析IP结果集合
-	*/
+	 * HttpDns同步解析接口
+	 * 注意：domain只能传入域名不能传入IP，返回结果需要做非空判断
+	 * 首先查询缓存，若存在则返回结果，若不存在则进行同步域名解析请求，
+	 * 解析完成返回最新解析结果，若解析失败返回空对象
+	 * @param domain 域名(如www.qq.com)
+	 * @return 域名对应的解析IP结果集合
+	 */
 	String ips = MSDKDnsResolver.getInstance(). getAddrByName(domain);
 
 ## 3．注意事项
@@ -122,7 +116,7 @@
 			Debug.Log(" WGGetHostByName ===========" + m_dnsJo);
 		if (m_dnsJo == null)
 			return;
-		m_dnsJo.Call("init", context);
+		m_dnsJo.Call("init", context, appId, debug, timeout);
 	}
 
 ### (2)调用HttpDns接口解析域名：
